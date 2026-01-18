@@ -1,0 +1,3 @@
+Steps to reproduce
+1. open the app
+2. watch it break
