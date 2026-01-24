@@ -7,30 +7,6 @@ import { uniqueTitle } from '../support/api';
  */
 const WCAG = { runOnly: { type: 'tag' as const, values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } };
 
-interface Node {
-  target: string[];
-  failureSummary?: string;
-}
-
-interface Result {
-  id: string;
-  impact?: string | null;
-  help: string;
-  nodes: Node[];
-}
-
-/**
- * Prints each violation with the element it is on. "3 violations found" tells
- * you nothing you can act on from a CI log.
- */
-const report = (violations: Result[]) => {
-  const lines = violations.flatMap((violation) => [
-    `${violation.id} (${violation.impact}) × ${violation.nodes.length}: ${violation.help}`,
-    ...violation.nodes.map((node) => `    ${node.target.join(' ')}\n      ${node.failureSummary ?? ''}`),
-  ]);
-  cy.task('log', lines.join('\n'), { log: false });
-};
-
 describe('accessibility', () => {
   beforeEach(() => {
     cy.login('admin');
@@ -38,7 +14,7 @@ describe('accessibility', () => {
 
   const scan = () => {
     cy.injectAxe();
-    cy.checkA11y(undefined, WCAG, report as never, false);
+    cy.checkAccessibility(undefined, WCAG);
   };
 
   it('the home page has no detectable violations', () => {

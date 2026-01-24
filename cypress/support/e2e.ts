@@ -1,4 +1,4 @@
-import 'cypress-axe';
+import './accessibility';
 import './commands';
 
 /**
