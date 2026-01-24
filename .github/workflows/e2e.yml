@@ -1,0 +1,65 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 2'
+  workflow_dispatch:
+
+env:
+  APP_REPO: mariusuncrop/bugboard-app
+  BASE_URL: http://localhost:5173
+  API_URL: http://localhost:4000
+
+jobs:
+  cypress:
+    name: Cypress (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox, electron]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.APP_REPO }}
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Start BugBoard
+        working-directory: app
+        run: |
+          npm ci
+          npm run dev &
+          npx wait-on "$BASE_URL" "$API_URL/api/health" --timeout 120000
+
+      # The action handles installing Cypress, caching its binary, and waiting
+      # for the app — all of which is otherwise four more steps to maintain.
+      - name: Run the suite
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          wait-on: ${{ env.BASE_URL }}
+          wait-on-timeout: 120
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-${{ matrix.browser }}
+          path: cypress/screenshots
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-videos-${{ matrix.browser }}
+          path: cypress/videos
+          retention-days: 7
